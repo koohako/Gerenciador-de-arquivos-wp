@@ -10,7 +10,9 @@ Um pequeno plugin WordPress/Elementor para facilitar a importação, exportaçã
 
 ## Como instalar
 
-### Instalação rápida via arquivo .zip
+### Instalação rápida via arquivo .zip (RECOMENDADO)
+
+![Demonstração do plugin](dev/InstalaçãoDoPlugin.gif)
 
 1. Faça o download do plugin em formato `.zip` por [este link](https://github.com/koohako/Gerenciador-de-arquivos-wp/releases/latest) (ou utilize o arquivo .zip disponível neste repositório).
 2. No painel administrativo do WordPress, acesse **Plugins > Adicionar novo**.
@@ -29,9 +31,12 @@ Um pequeno plugin WordPress/Elementor para facilitar a importação, exportaçã
 
 ## Como usar
 
-- Após ativar, acesse o painel do WordPress e localize o menu do plugin.
 - Gerencie seus arquivos, importe ou exporte documentos conforme necessário.
+![Demonstração do plugin](dev/DemonstraçãoDoGerenciador.gif)
+
 - Utilize o widget do Elementor para exibir a lista de arquivos em qualquer página do seu site.
+- Para mostrar os arquivos da pasta desejada basta colocar o nome da pasta no campo "Pasta Base" (para subpastas deve-se escrever o caminho ex: "Pasta/subpasta").
+![Demonstração do plugin](dev/DemonstraçãoDoWidget.gif)
 
 ## Requisitos
 
