@@ -2,7 +2,7 @@
 /*
 Plugin Name: Gerenciador de Arquivos Pro
 Description: Plugin completo para gerenciar arquivos com painel administrativo e widget Elementor
-Version: 2.9.3
+Version: 2.9.5
 Author: Artur Guimarães de Freitas
 */
 
@@ -13,7 +13,7 @@ define('GAP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 // Versão e modo de desenvolvimento
 if (!defined('GAPR_VERSION')) {
-    define('GAPR_VERSION', '2.9.3');
+    define('GAPR_VERSION', '2.9.5');
 }
 if (!defined('GAPR_DEV')) {
     define('GAPR_DEV', false); // Em produção mantenha false; em desenvolvimento pode usar true
@@ -275,7 +275,7 @@ class GerenciadorArquivosPro {
         // Base dirs
         $upload_dir = wp_upload_dir();
         $base_dir = $upload_dir['basedir'] . '/gap-files';
-        $tmp_dir = $base_dir . '/.tmp_zips';
+        $tmp_dir = $upload_dir['basedir'] . '/.gap_tmp_zips'; // Pasta oculta fora do diretório visível
 
         if (!file_exists($tmp_dir)) {
             wp_mkdir_p($tmp_dir);
@@ -308,7 +308,8 @@ class GerenciadorArquivosPro {
                 $this->zip_add_directory($zip, $real_full, $base_dir);
                 $added++;
             } elseif (is_file($real_full)) {
-                $localname = ltrim(str_replace($base_dir, '', $real_full), '/\\');
+                // Usar apenas o nome do arquivo, sem estrutura de pastas
+                $localname = basename($real_full);
                 $zip->addFile($real_full, $localname);
                 $added++;
             }
@@ -735,7 +736,7 @@ class GerenciadorArquivosPro {
 
         $upload_dir = wp_upload_dir();
         $base_dir = $upload_dir['basedir'] . '/gap-files';
-        $tmp_dir = $base_dir . '/.tmp_zips';
+        $tmp_dir = $upload_dir['basedir'] . '/.gap_tmp_zips'; // Pasta oculta fora do diretório visível
         $zip_path = $tmp_dir . '/' . $zip_name;
 
         $real_zip = realpath($zip_path);
@@ -773,12 +774,12 @@ class GerenciadorArquivosPro {
         );
         foreach ($files as $file) {
             $real_path = $file->getPathname();
-            $localname = ltrim(str_replace($base_dir, '', $real_path), '/\\');
-            if ($file->isDir()) {
-                $zip->addEmptyDir($localname);
-            } else {
+            if ($file->isFile()) {
+                // Usar apenas o nome do arquivo, sem estrutura de pastas
+                $localname = basename($real_path);
                 $zip->addFile($real_path, $localname);
             }
+            // Pular diretórios - não criar estrutura de pastas
         }
     }
 
