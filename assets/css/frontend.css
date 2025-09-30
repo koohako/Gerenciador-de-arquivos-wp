@@ -104,6 +104,13 @@
     background: #f1f1f1;
 }
 
+/* Header Back Button Styles */
+.gap-header-back-btn:hover {
+    background: rgba(255,255,255,0.4) !important;
+    border-color: rgba(255,255,255,0.6) !important;
+    transform: translateY(-50%) scale(1.05);
+}
+
 /* File Grid - Layout em Lista */
 .gap-file-grid {
     display: block;

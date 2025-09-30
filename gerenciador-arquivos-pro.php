@@ -2,7 +2,7 @@
 /*
 Plugin Name: Gerenciador de Arquivos Pro
 Description: Plugin completo para gerenciar arquivos com painel administrativo e widget Elementor
-Version: 2.9.8
+Version: 2.9.9
 Author: Artur Guimarães de Freitas
 */
 
@@ -13,7 +13,7 @@ define('GAP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 // Versão e modo de desenvolvimento
 if (!defined('GAPR_VERSION')) {
-    define('GAPR_VERSION', '2.9.8');
+    define('GAPR_VERSION', '2.9.9');
 }
 if (!defined('GAPR_DEV')) {
     define('GAPR_DEV', false); // Em produção mantenha false; em desenvolvimento pode usar true

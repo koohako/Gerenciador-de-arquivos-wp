@@ -72,6 +72,60 @@ class GAPElementorWidget extends Widget_Base {
                 'default' => 'yes',
             ]
         );
+
+        $this->add_control(
+            'title_area_height',
+            [
+                'label' => __('Altura da Área do Título', 'gerenciador-arquivos-pro'),
+                'type' => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range' => [
+                    'px' => [
+                        'min' => 60,
+                        'max' => 120,
+                        'step' => 5,
+                    ],
+                ],
+                'default' => [
+                    'unit' => 'px',
+                    'size' => 80,
+                ],
+                'description' => __('Altura total da área do cabeçalho', 'gerenciador-arquivos-pro'),
+                'condition' => [
+                    'show_title' => 'yes',
+                ],
+            ]
+        );
+
+        $this->add_control(
+            'show_path',
+            [
+                'label' => __('Mostrar Caminho da Pasta', 'gerenciador-arquivos-pro'),
+                'type' => Controls_Manager::SWITCHER,
+                'label_on' => __('Sim', 'gerenciador-arquivos-pro'),
+                'label_off' => __('Não', 'gerenciador-arquivos-pro'),
+                'return_value' => 'yes',
+                'default' => '',
+                'description' => __('Mostra/oculta a barra de navegação com o caminho atual', 'gerenciador-arquivos-pro'),
+            ]
+        );
+
+        $this->add_control(
+            'show_back_button',
+            [
+                'label' => __('Botão Voltar no Cabeçalho', 'gerenciador-arquivos-pro'),
+                'type' => Controls_Manager::SWITCHER,
+                'label_on' => __('Sim', 'gerenciador-arquivos-pro'),
+                'label_off' => __('Não', 'gerenciador-arquivos-pro'),
+                'return_value' => 'yes',
+                'default' => 'yes',
+                'description' => __('Mostra botão Voltar no cabeçalho quando caminho estiver oculto (só aparece dentro de pastas)', 'gerenciador-arquivos-pro'),
+                'condition' => [
+                    'show_path!' => 'yes',
+                    'show_title' => 'yes',
+                ],
+            ]
+        );
         
         $this->add_control(
             'height_mode',
@@ -159,6 +213,9 @@ class GAPElementorWidget extends Widget_Base {
         $base_folder = sanitize_text_field($settings['base_folder']);
         $widget_title = sanitize_text_field($settings['widget_title']);
         $show_title = $settings['show_title'] === 'yes';
+        $title_area_height = isset($settings['title_area_height']['size']) ? (int) $settings['title_area_height']['size'] : 80;
+        $show_path = $settings['show_path'] === 'yes';
+        $show_back_button = $settings['show_back_button'] === 'yes';
         $height_mode = isset($settings['height_mode']) ? $settings['height_mode'] : 'auto';
         $content_height = isset($settings['content_height']['size']) ? (int) $settings['content_height']['size'] : 400;
         $enable_scrollbar = $settings['enable_scrollbar'] === 'yes';
@@ -192,11 +249,17 @@ class GAPElementorWidget extends Widget_Base {
             
             <?php if ($show_title && $widget_title): ?>
             <div class="gap-frontend-header" 
-                 style="background:linear-gradient(135deg, #104B3B 0%, #218865 100%); color:white !important; padding:20px; text-align:center;">
+                 style="background:linear-gradient(135deg, #104B3B 0%, #218865 100%); color:white !important; height:<?php echo $title_area_height; ?>px; text-align:center; position:relative; display:flex; align-items:center; justify-content:center;">
                 <h3 style="margin:0; font-weight:600; font-size:24px; color:white !important;"><?php echo esc_html($widget_title); ?></h3>
+                <?php if (!$show_path && $show_back_button): ?>
+                <button class="gap-header-back-btn" style="display:none !important; position:absolute; right:20px; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); padding:8px 12px; border-radius:6px; font-size:14px; align-items:center; gap:5px; transition:all 0.3s ease;">
+                    ← Voltar
+                </button>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
             
+            <?php if ($show_path): ?>
             <div class="gap-frontend-nav" 
                  style="background:#f8f9fa; padding:15px 20px; border-bottom:1px solid #e1e5e9; display:flex; justify-content:space-between; align-items:center;">
                 <div class="gap-path-display" 
@@ -211,6 +274,7 @@ class GAPElementorWidget extends Widget_Base {
                     ← Voltar
                 </button>
             </div>
+            <?php endif; ?>
             
             <div class="gap-frontend-content" 
                  style="<?php echo esc_attr($content_styles); ?>">
@@ -227,6 +291,9 @@ class GAPElementorWidget extends Widget_Base {
         var base_folder = settings.base_folder ? settings.base_folder : '';
         var widget_title = settings.widget_title ? settings.widget_title : 'Explorador de Arquivos';
         var show_title = settings.show_title === 'yes';
+        var title_area_height = settings.title_area_height && settings.title_area_height.size ? settings.title_area_height.size : 80;
+        var show_path = settings.show_path === 'yes';
+        var show_back_button = settings.show_back_button === 'yes';
         var display_path = base_folder ? '/' + base_folder : '/';
         var height_mode = settings.height_mode ? settings.height_mode : 'auto';
         var content_height = settings.content_height && settings.content_height.size ? settings.content_height.size : 400;
@@ -256,11 +323,18 @@ class GAPElementorWidget extends Widget_Base {
             
             <# if (show_title && widget_title) { #>
             <div class="gap-frontend-header" 
-                 style="background:linear-gradient(135deg, #104B3B 0%, #218865 100%); color:white !important; padding:20px; text-align:center;">
+                 style="background:linear-gradient(135deg, #104B3B 0%, #218865 100%); color:white !important; height:{{ title_area_height }}px; text-align:center; position:relative; display:flex; align-items:center; justify-content:center;">
                 <h3 style="margin:0; font-weight:600; font-size:24px; color:white !important;">{{ widget_title }}</h3>
+                <# if (!show_path && show_back_button) { #>
+                <button class="gap-header-back-btn" 
+                        style="display:none; position:absolute; right:20px; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); padding:8px 12px; border-radius:6px; font-size:14px; align-items:center; gap:5px; transition:all 0.3s ease;">
+                    ← Voltar (Preview)
+                </button>
+                <# } #>
             </div>
             <# } #>
             
+            <# if (show_path) { #>
             <div class="gap-frontend-nav" 
                  style="background:#f8f9fa; padding:15px 20px; border-bottom:1px solid #e1e5e9; display:flex; justify-content:space-between; align-items:center;">
                 <div class="gap-path-display" 
@@ -274,6 +348,7 @@ class GAPElementorWidget extends Widget_Base {
                     ← Voltar
                 </button>
             </div>
+            <# } #>
             
             <div class="gap-frontend-content" 
                  style="{{ content_styles }}">

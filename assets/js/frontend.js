@@ -22,8 +22,17 @@ jQuery(document).ready(function($) {
         }
         
         function bindEvents() {
-            // Back button
-            container.find('.gap-back-btn').on('click', navigateBack);
+            // Back button na navegação (só se existir)
+            const backBtn = container.find('.gap-back-btn');
+            if (backBtn.length > 0) {
+                backBtn.on('click', navigateBack);
+            }
+            
+            // Back button no cabeçalho (só se existir)
+            const headerBackBtn = container.find('.gap-header-back-btn');
+            if (headerBackBtn.length > 0) {
+                headerBackBtn.on('click', navigateBack);
+            }
             
             // File item clicks
             container.on('click', '.gap-file-item[data-type="folder"]', function() {
@@ -321,29 +330,56 @@ jQuery(document).ready(function($) {
         function updateNavigation() {
             const pathDisplay = container.find('.gap-current-path');
             const backBtn = container.find('.gap-back-btn');
+            const headerBackBtn = container.find('.gap-header-back-btn');
             
-            // Mostra o caminho completo incluindo a pasta base
-            let displayPath = '/';
-            if (baseFolder && currentPath) {
-                displayPath = '/' + baseFolder + '/' + currentPath;
-            } else if (baseFolder) {
-                displayPath = '/' + baseFolder;
-            } else if (currentPath) {
-                displayPath = '/' + currentPath;
+            // Se elementos da navegação não existem mas existe botão no header, atualizar apenas o header
+            const hasNavigation = pathDisplay.length > 0 && backBtn.length > 0;
+            const hasHeaderBack = headerBackBtn.length > 0;
+            
+            // Atualizar navegação normal se existir
+            if (hasNavigation) {
+                // Mostra o caminho completo incluindo a pasta base
+                let displayPath = '/';
+                if (baseFolder && currentPath) {
+                    displayPath = '/' + baseFolder + '/' + currentPath;
+                } else if (baseFolder) {
+                    displayPath = '/' + baseFolder;
+                } else if (currentPath) {
+                    displayPath = '/' + currentPath;
+                }
+                
+                pathDisplay.text(displayPath);
+                
+                if (currentPath) {
+                    backBtn.prop('disabled', false).show();
+                } else {
+                    backBtn.prop('disabled', true).hide();
+                }
             }
             
-            pathDisplay.text(displayPath);
-            
-            if (currentPath) {
-                backBtn.prop('disabled', false).show();
-            } else {
-                backBtn.prop('disabled', true).hide();
+            // Atualizar botão do cabeçalho se existir
+            if (hasHeaderBack) {
+                if (currentPath) {
+                    // Mostra e ativa o botão quando há caminho para voltar
+                    headerBackBtn.css({
+                                  'display': 'flex',
+                                  'cursor': 'pointer',
+                                  'background': 'rgba(255,255,255,0.3)',
+                                  'border-color': 'rgba(255,255,255,0.5)'
+                              })
+                              .prop('disabled', false)
+                              .show();
+                } else {
+                    // Oculta o botão quando está na raiz
+                    headerBackBtn.css('display', 'none').hide();
+                }
             }
         }
         
         function navigateToFolder(folderName) {
             currentPath = currentPath ? currentPath + '/' + folderName : folderName;
             loadFiles(); // Carrega a nova pasta e reseta a paginação
+            updateNavigation(); // Atualiza a navegação após entrar na pasta
         }
         
         function navigateBack() {
@@ -353,6 +389,7 @@ jQuery(document).ready(function($) {
             pathParts.pop();
             currentPath = pathParts.join('/');
             loadFiles(); // Carrega a pasta anterior e reseta a paginação
+            updateNavigation(); // Atualiza a navegação após voltar
         }
         
         function downloadFile(fileItem) {
