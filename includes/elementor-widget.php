@@ -73,6 +73,84 @@ class GAPElementorWidget extends Widget_Base {
             ]
         );
         
+        $this->add_control(
+            'height_mode',
+            [
+                'label' => __('Modo de Altura', 'gerenciador-arquivos-pro'),
+                'type' => Controls_Manager::SELECT,
+                'default' => 'auto',
+                'options' => [
+                    'auto' => __('Automática (adapta ao conteúdo)', 'gerenciador-arquivos-pro'),
+                    'fixed' => __('Altura Fixa', 'gerenciador-arquivos-pro'),
+                ],
+                'description' => __('Escolha como definir a altura da lista', 'gerenciador-arquivos-pro'),
+            ]
+        );
+
+        $this->add_control(
+            'content_height',
+            [
+                'label' => __('Altura da Lista', 'gerenciador-arquivos-pro'),
+                'type' => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range' => [
+                    'px' => [
+                        'min' => 200,
+                        'max' => 800,
+                        'step' => 10,
+                    ],
+                ],
+                'default' => [
+                    'unit' => 'px',
+                    'size' => 400,
+                ],
+                'description' => __('Altura fixa da área de listagem de arquivos', 'gerenciador-arquivos-pro'),
+                'condition' => [
+                    'height_mode' => 'fixed',
+                ],
+            ]
+        );
+        
+        $this->add_control(
+            'enable_scrollbar',
+            [
+                'label' => __('Ativar Barra de Rolagem', 'gerenciador-arquivos-pro'),
+                'type' => Controls_Manager::SWITCHER,
+                'label_on' => __('Sim', 'gerenciador-arquivos-pro'),
+                'label_off' => __('Não', 'gerenciador-arquivos-pro'),
+                'return_value' => 'yes',
+                'default' => 'yes',
+                'description' => __('Mostra barra de rolagem quando o conteúdo excede a altura definida', 'gerenciador-arquivos-pro'),
+                'condition' => [
+                    'height_mode' => 'fixed',
+                ],
+            ]
+        );
+
+        $this->add_control(
+            'max_height_auto',
+            [
+                'label' => __('Altura Máxima (Modo Auto)', 'gerenciador-arquivos-pro'),
+                'type' => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range' => [
+                    'px' => [
+                        'min' => 300,
+                        'max' => 1000,
+                        'step' => 50,
+                    ],
+                ],
+                'default' => [
+                    'unit' => 'px',
+                    'size' => 600,
+                ],
+                'description' => __('Altura máxima no modo automático (adiciona scroll se ultrapassar)', 'gerenciador-arquivos-pro'),
+                'condition' => [
+                    'height_mode' => 'auto',
+                ],
+            ]
+        );
+        
         $this->end_controls_section();
     }
     
@@ -81,10 +159,32 @@ class GAPElementorWidget extends Widget_Base {
         $base_folder = sanitize_text_field($settings['base_folder']);
         $widget_title = sanitize_text_field($settings['widget_title']);
         $show_title = $settings['show_title'] === 'yes';
+        $height_mode = isset($settings['height_mode']) ? $settings['height_mode'] : 'auto';
+        $content_height = isset($settings['content_height']['size']) ? (int) $settings['content_height']['size'] : 400;
+        $enable_scrollbar = $settings['enable_scrollbar'] === 'yes';
+        $max_height_auto = isset($settings['max_height_auto']['size']) ? (int) $settings['max_height_auto']['size'] : 600;
         
         // Enqueue scripts and styles
         wp_enqueue_script('gap-frontend-js');
         wp_enqueue_style('gap-frontend-css');
+        
+        // Build content styles based on height mode
+        $content_styles = 'padding:15px;';
+        
+        if ($height_mode === 'fixed') {
+            // Modo altura fixa
+            $content_styles .= 'height:' . $content_height . 'px;';
+            if ($enable_scrollbar) {
+                $content_styles .= 'overflow-y:auto;';
+            } else {
+                $content_styles .= 'overflow:hidden;';
+            }
+        } else {
+            // Modo automático
+            $content_styles .= 'min-height:250px;';
+            $content_styles .= 'max-height:' . $max_height_auto . 'px;';
+            $content_styles .= 'overflow-y:auto;';
+        }
         
         ?>
         <div class="gap-frontend-container" data-base-folder="<?php echo esc_attr($base_folder); ?>" 
@@ -113,7 +213,7 @@ class GAPElementorWidget extends Widget_Base {
             </div>
             
             <div class="gap-frontend-content" 
-                 style="padding:15px; min-height:250px;">
+                 style="<?php echo esc_attr($content_styles); ?>">
                 <!-- Content will be loaded via JavaScript -->
             </div>
         </div>
@@ -128,6 +228,28 @@ class GAPElementorWidget extends Widget_Base {
         var widget_title = settings.widget_title ? settings.widget_title : 'Explorador de Arquivos';
         var show_title = settings.show_title === 'yes';
         var display_path = base_folder ? '/' + base_folder : '/';
+        var height_mode = settings.height_mode ? settings.height_mode : 'auto';
+        var content_height = settings.content_height && settings.content_height.size ? settings.content_height.size : 400;
+        var enable_scrollbar = settings.enable_scrollbar === 'yes';
+        var max_height_auto = settings.max_height_auto && settings.max_height_auto.size ? settings.max_height_auto.size : 600;
+        
+        var content_styles = 'padding:15px;';
+        var height_info = '';
+        
+        if (height_mode === 'fixed') {
+            content_styles += 'height:' + content_height + 'px;';
+            if (enable_scrollbar) {
+                content_styles += 'overflow-y:auto;';
+            } else {
+                content_styles += 'overflow:hidden;';
+            }
+            height_info = 'Altura: ' + content_height + 'px (Fixa) | Scroll: ' + (enable_scrollbar ? 'Ativado' : 'Desativado');
+        } else {
+            content_styles += 'min-height:250px;';
+            content_styles += 'max-height:' + max_height_auto + 'px;';
+            content_styles += 'overflow-y:auto;';
+            height_info = 'Altura: Automática (max: ' + max_height_auto + 'px)';
+        }
         #>
         <div class="gap-frontend-container" data-base-folder="{{ base_folder }}" 
              style="background:#fff; border:1px solid #e1e5e9; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif; overflow:hidden; max-width:700px; margin:0 auto;">
@@ -154,7 +276,7 @@ class GAPElementorWidget extends Widget_Base {
             </div>
             
             <div class="gap-frontend-content" 
-                 style="padding:15px; min-height:250px;">
+                 style="{{ content_styles }}">
                 <div class="gap-file-grid" style="display:block;">
                     <div style="text-align:center; padding:40px 20px; color:#6c757d;">
                         <div style="font-size:3em; margin-bottom:15px; opacity:0.5;">📁</div>
@@ -166,6 +288,9 @@ class GAPElementorWidget extends Widget_Base {
                             <# } #>
                         </div>
                         <div style="font-size:1em; opacity:0.8;">Os arquivos aparecerão aqui no site publicado</div>
+                        <div style="font-size:0.9em; opacity:0.6; margin-top:10px;">
+                            {{ height_info }}
+                        </div>
                     </div>
                 </div>
             </div>

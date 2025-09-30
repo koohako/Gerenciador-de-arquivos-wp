@@ -80,6 +80,30 @@
     min-height: 250px;
 }
 
+/* Custom Scrollbar for Content */
+.gap-frontend-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.gap-frontend-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.gap-frontend-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.gap-frontend-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.gap-frontend-content::-webkit-scrollbar-corner {
+    background: #f1f1f1;
+}
+
 /* File Grid - Layout em Lista */
 .gap-file-grid {
     display: block;
