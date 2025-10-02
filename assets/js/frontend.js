@@ -36,7 +36,8 @@ jQuery(document).ready(function($) {
             
             // File item clicks
             container.on('click', '.gap-file-item[data-type="folder"]', function() {
-                navigateToFolder($(this).data('name'));
+                const folderName = $(this).attr('data-name'); // Usa attr() em vez de data() para caracteres especiais
+                navigateToFolder(folderName);
             });
             
             // File downloads
@@ -134,11 +135,12 @@ jQuery(document).ready(function($) {
                 const shortName = shortenFileName(file.name);
                 
                 if (file.type === 'folder') {
+                    const escapedName = $('<div>').text(file.name).html(); // Escapa caracteres HTML
                     html += `
-                        <div class="gap-file-item folder" data-name="${file.name}" data-type="folder">
+                        <div class="gap-file-item folder" data-name="${escapedName}" data-type="folder">
                             <div class="gap-file-icon ${typeClass}">${icon}</div>
                             <div class="gap-file-info">
-                                <div class="gap-file-name" title="${file.name}">${shortName}</div>
+                                <div class="gap-file-name" title="${escapedName}">${shortName}</div>
                                 <div class="gap-file-meta">
                                     <span class="gap-file-date">${file.modified}</span>
                                     <span style="color: #6c757d;">📁 Pasta</span>
@@ -147,14 +149,16 @@ jQuery(document).ready(function($) {
                         </div>
                     `;
                 } else {
+                    const escapedName = $('<div>').text(file.name).html(); // Escapa caracteres HTML
+                    const escapedPath = $('<div>').text(file.path || '').html();
                     html += `
-                        <div class="gap-file-item file" data-name="${file.name}" data-type="file" data-path="${file.path || ''}">
+                        <div class="gap-file-item file" data-name="${escapedName}" data-type="file" data-path="${escapedPath}">
                             ${file.is_image && file.url ? 
-                                `<img src="${file.url}" alt="${file.name}" class="gap-image-preview">` : 
+                                `<img src="${file.url}" alt="${escapedName}" class="gap-image-preview">` : 
                                 `<div class="gap-file-icon ${typeClass}">${icon}</div>`
                             }
                             <div class="gap-file-info">
-                                <div class="gap-file-name" title="${file.name}">${shortName}</div>
+                                <div class="gap-file-name" title="${escapedName}">${shortName}</div>
                                 <div class="gap-file-meta">
                                     ${file.size ? `<span class="gap-file-size">${file.size}</span>` : ''}
                                     <span class="gap-file-date">${file.modified}</span>
@@ -377,7 +381,9 @@ jQuery(document).ready(function($) {
         }
         
         function navigateToFolder(folderName) {
-            currentPath = currentPath ? currentPath + '/' + folderName : folderName;
+            // Decodifica HTML entities caso existam
+            const decodedFolderName = $('<div>').html(folderName).text();
+            currentPath = currentPath ? currentPath + '/' + decodedFolderName : decodedFolderName;
             loadFiles(); // Carrega a nova pasta e reseta a paginação
             updateNavigation(); // Atualiza a navegação após entrar na pasta
         }
@@ -393,9 +399,10 @@ jQuery(document).ready(function($) {
         }
         
         function downloadFile(fileItem) {
-            const fileName = fileItem.data('name');
+            const fileName = fileItem.attr('data-name'); // Usa attr() em vez de data() para caracteres especiais
+            const decodedFileName = $('<div>').html(fileName).text(); // Decodifica HTML entities
             const fullPath = baseFolder ? (currentPath ? baseFolder + '/' + currentPath : baseFolder) : currentPath;
-            const filePath = fullPath ? fullPath + '/' + fileName : fileName;
+            const filePath = fullPath ? fullPath + '/' + decodedFileName : decodedFileName;
             
             // Show loading state
             const downloadBtn = fileItem.find('.gap-download-btn');
