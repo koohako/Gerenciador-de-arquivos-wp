@@ -2,15 +2,23 @@
 jQuery(document).ready(function($) {
     if (window.gap_ajax && gap_ajax.debug) console.log('🚀 Frontend JS carregado - versão com paginação');
     
-    $('.gap-frontend-container').each(function() {
+    $('.gap-frontend-container').each(function(index) {
         const container = $(this);
         const baseFolder = container.data('base-folder') || '';
+        const widgetId = 'gap-widget-' + index; // ID único para cada widget
+        container.attr('id', widgetId);
+        
         let currentPath = '';
         let currentPage = 1;
-    let itemsPerPage = 10; // Novo padrão frontend
-    let allFiles = [];
-    let totalFiles = 0;
-    const GAP_FILE_NAME_MAX = 50; // Limite configurável para truncagem (frontend)
+        let itemsPerPage = 10; // Novo padrão frontend
+        let allFiles = [];
+        let totalFiles = 0;
+        const GAP_FILE_NAME_MAX = 50; // Limite configurável para truncagem (frontend)
+        
+        // Debug temporário
+        if (typeof console !== 'undefined') {
+            console.log('GAP: Inicializando widget', widgetId, 'com pasta base:', baseFolder);
+        }
         
     if (window.gap_ajax && gap_ajax.debug) console.log('📁 Inicializando container:', container, 'Base folder:', baseFolder);
         
@@ -45,6 +53,35 @@ jQuery(document).ready(function($) {
                 e.stopPropagation();
                 const fileItem = $(this).closest('.gap-file-item');
                 downloadFile(fileItem);
+            });
+            
+            // Pagination clicks
+            container.on('click', '.gap-pagination-btn', function(e) {
+                e.preventDefault();
+                
+                // Não processa se o botão estiver desabilitado
+                if ($(this).hasClass('disabled') || $(this).prop('disabled')) {
+                    return false;
+                }
+                
+                const page = parseInt($(this).attr('data-page'));
+                if (!isNaN(page) && page >= 1) {
+                    // Debug temporário
+                    if (typeof console !== 'undefined') {
+                        console.log('GAP: Mudando para página:', page);
+                    }
+                    changePage(page);
+                }
+            });
+            
+            // Items per page change
+            container.on('change', '.gap-items-per-page select', function() {
+                const newItemsPerPage = parseInt($(this).val());
+                // Debug temporário
+                if (typeof console !== 'undefined') {
+                    console.log('GAP: Mudando itens por página para:', newItemsPerPage);
+                }
+                changeItemsPerPage(newItemsPerPage);
             });
         }
         
@@ -177,11 +214,19 @@ jQuery(document).ready(function($) {
         }
         
         function updatePagination() {
+            // Debug temporário
+            if (typeof console !== 'undefined') {
+                console.log('GAP: Atualizando paginação - Total:', totalFiles, 'Página atual:', currentPage, 'Itens por página:', itemsPerPage);
+            }
+            
             // Remove paginação existente
             container.find('.gap-pagination').remove();
             
             // Exibe paginação a partir de 10 itens
             if (totalFiles < 10) {
+                if (typeof console !== 'undefined') {
+                    console.log('GAP: Paginação não necessária, menos de 10 itens');
+                }
                 return; // Não precisa de paginação se menos de 10
             }
             
@@ -190,7 +235,7 @@ jQuery(document).ready(function($) {
             
             // Botão Anterior
             paginationHtml += `<button class="gap-pagination-btn ${currentPage === 1 ? 'disabled' : ''}" 
-                              onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+                              data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
             
             // Páginas
             const maxVisiblePages = 5;
@@ -204,7 +249,7 @@ jQuery(document).ready(function($) {
             
             // Primeira página se não estiver visível
             if (startPage > 1) {
-                paginationHtml += `<button class="gap-pagination-btn" onclick="changePage(1)">1</button>`;
+                paginationHtml += `<button class="gap-pagination-btn" data-page="1">1</button>`;
                 if (startPage > 2) {
                     paginationHtml += '<span class="gap-pagination-ellipsis">...</span>';
                 }
@@ -213,7 +258,7 @@ jQuery(document).ready(function($) {
             // Páginas visíveis
             for (let i = startPage; i <= endPage; i++) {
                 paginationHtml += `<button class="gap-pagination-btn ${i === currentPage ? 'active' : ''}" 
-                                  onclick="changePage(${i})">${i}</button>`;
+                                  data-page="${i}">${i}</button>`;
             }
             
             // Última página se não estiver visível
@@ -221,12 +266,12 @@ jQuery(document).ready(function($) {
                 if (endPage < totalPages - 1) {
                     paginationHtml += '<span class="gap-pagination-ellipsis">...</span>';
                 }
-                paginationHtml += `<button class="gap-pagination-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+                paginationHtml += `<button class="gap-pagination-btn" data-page="${totalPages}">${totalPages}</button>`;
             }
             
             // Botão Próxima
             paginationHtml += `<button class="gap-pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" 
-                              onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+                              data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
             
             // Info da página
             const startItem = (currentPage - 1) * itemsPerPage + 1;
@@ -237,7 +282,7 @@ jQuery(document).ready(function($) {
             paginationHtml += `
                 <div class="gap-items-per-page">
                     Mostrar: 
-                    <select onchange="changeItemsPerPage(this.value)">
+                    <select>
                         <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
                         <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
                         <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
@@ -252,23 +297,23 @@ jQuery(document).ready(function($) {
             container.find('.gap-frontend-content').after(paginationHtml);
         }
         
-        // Função global para mudança de página
-        window.changePage = function(page) {
+        // Função local para mudança de página
+        function changePage(page) {
             const totalPages = Math.ceil(totalFiles / itemsPerPage);
             if (page >= 1 && page <= totalPages && page !== currentPage) {
                 currentPage = page;
                 displayCurrentPage();
                 updatePagination();
             }
-        };
+        }
         
-        // Função global para mudança de itens por página
-        window.changeItemsPerPage = function(newItemsPerPage) {
+        // Função local para mudança de itens por página
+        function changeItemsPerPage(newItemsPerPage) {
             itemsPerPage = parseInt(newItemsPerPage);
             currentPage = 1;
             displayCurrentPage();
             updatePagination();
-        };
+        }
         
         function getFileIcon(file) {
             if (file.type === 'folder') {

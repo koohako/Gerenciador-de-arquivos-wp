@@ -132,10 +132,11 @@ class GAPElementorWidget extends Widget_Base {
             [
                 'label' => __('Modo de Altura', 'gerenciador-arquivos-pro'),
                 'type' => Controls_Manager::SELECT,
-                'default' => 'auto',
+                'default' => 'fixed_px',
                 'options' => [
                     'auto' => __('Automática (adapta ao conteúdo)', 'gerenciador-arquivos-pro'),
-                    'fixed' => __('Altura Fixa', 'gerenciador-arquivos-pro'),
+                    'fixed_px' => __('Altura Fixa (Pixels)', 'gerenciador-arquivos-pro'),
+                    'fixed_lines' => __('Altura por Linhas', 'gerenciador-arquivos-pro'),
                 ],
                 'description' => __('Escolha como definir a altura da lista', 'gerenciador-arquivos-pro'),
             ]
@@ -144,7 +145,7 @@ class GAPElementorWidget extends Widget_Base {
         $this->add_control(
             'content_height',
             [
-                'label' => __('Altura da Lista', 'gerenciador-arquivos-pro'),
+                'label' => __('Altura da Lista (Pixels)', 'gerenciador-arquivos-pro'),
                 'type' => Controls_Manager::SLIDER,
                 'size_units' => ['px'],
                 'range' => [
@@ -158,9 +159,31 @@ class GAPElementorWidget extends Widget_Base {
                     'unit' => 'px',
                     'size' => 400,
                 ],
-                'description' => __('Altura fixa da área de listagem de arquivos', 'gerenciador-arquivos-pro'),
+                'description' => __('Altura fixa em pixels da área de listagem de arquivos', 'gerenciador-arquivos-pro'),
                 'condition' => [
-                    'height_mode' => 'fixed',
+                    'height_mode' => 'fixed_px',
+                ],
+            ]
+        );
+
+        $this->add_control(
+            'content_lines',
+            [
+                'label' => __('Número de Linhas', 'gerenciador-arquivos-pro'),
+                'type' => Controls_Manager::SLIDER,
+                'range' => [
+                    'px' => [
+                        'min' => 3,
+                        'max' => 20,
+                        'step' => 1,
+                    ],
+                ],
+                'default' => [
+                    'size' => 8,
+                ],
+                'description' => __('Quantas linhas de arquivos serão exibidas exatamente', 'gerenciador-arquivos-pro'),
+                'condition' => [
+                    'height_mode' => 'fixed_lines',
                 ],
             ]
         );
@@ -176,7 +199,7 @@ class GAPElementorWidget extends Widget_Base {
                 'default' => 'yes',
                 'description' => __('Mostra barra de rolagem quando o conteúdo excede a altura definida', 'gerenciador-arquivos-pro'),
                 'condition' => [
-                    'height_mode' => 'fixed',
+                    'height_mode' => ['fixed_px', 'fixed_lines'],
                 ],
             ]
         );
@@ -216,8 +239,9 @@ class GAPElementorWidget extends Widget_Base {
         $title_area_height = isset($settings['title_area_height']['size']) ? (int) $settings['title_area_height']['size'] : 80;
         $show_path = $settings['show_path'] === 'yes';
         $show_back_button = $settings['show_back_button'] === 'yes';
-        $height_mode = isset($settings['height_mode']) ? $settings['height_mode'] : 'auto';
+        $height_mode = isset($settings['height_mode']) ? $settings['height_mode'] : 'fixed_px';
         $content_height = isset($settings['content_height']['size']) ? (int) $settings['content_height']['size'] : 400;
+        $content_lines = isset($settings['content_lines']['size']) ? (int) $settings['content_lines']['size'] : 8;
         $enable_scrollbar = $settings['enable_scrollbar'] === 'yes';
         $max_height_auto = isset($settings['max_height_auto']['size']) ? (int) $settings['max_height_auto']['size'] : 600;
         
@@ -228,9 +252,19 @@ class GAPElementorWidget extends Widget_Base {
         // Build content styles based on height mode
         $content_styles = 'padding:15px;';
         
-        if ($height_mode === 'fixed') {
-            // Modo altura fixa
+        if ($height_mode === 'fixed_px') {
+            // Modo altura fixa em pixels
             $content_styles .= 'height:' . $content_height . 'px;';
+            if ($enable_scrollbar) {
+                $content_styles .= 'overflow-y:auto;';
+            } else {
+                $content_styles .= 'overflow:hidden;';
+            }
+        } elseif ($height_mode === 'fixed_lines') {
+            // Modo altura por linhas (cada linha tem exatamente 60px + 3px de margin)
+            $line_height = 63; // Altura exata: 60px do item + 3px margin-bottom
+            $calculated_height = $content_lines * $line_height;
+            $content_styles .= 'height:' . $calculated_height . 'px;';
             if ($enable_scrollbar) {
                 $content_styles .= 'overflow-y:auto;';
             } else {
@@ -295,15 +329,16 @@ class GAPElementorWidget extends Widget_Base {
         var show_path = settings.show_path === 'yes';
         var show_back_button = settings.show_back_button === 'yes';
         var display_path = base_folder ? '/' + base_folder : '/';
-        var height_mode = settings.height_mode ? settings.height_mode : 'auto';
+        var height_mode = settings.height_mode ? settings.height_mode : 'fixed_px';
         var content_height = settings.content_height && settings.content_height.size ? settings.content_height.size : 400;
+        var content_lines = settings.content_lines && settings.content_lines.size ? settings.content_lines.size : 8;
         var enable_scrollbar = settings.enable_scrollbar === 'yes';
         var max_height_auto = settings.max_height_auto && settings.max_height_auto.size ? settings.max_height_auto.size : 600;
         
         var content_styles = 'padding:15px;';
         var height_info = '';
         
-        if (height_mode === 'fixed') {
+        if (height_mode === 'fixed_px') {
             content_styles += 'height:' + content_height + 'px;';
             if (enable_scrollbar) {
                 content_styles += 'overflow-y:auto;';
@@ -311,6 +346,16 @@ class GAPElementorWidget extends Widget_Base {
                 content_styles += 'overflow:hidden;';
             }
             height_info = 'Altura: ' + content_height + 'px (Fixa) | Scroll: ' + (enable_scrollbar ? 'Ativado' : 'Desativado');
+        } else if (height_mode === 'fixed_lines') {
+            var line_height = 63; // Altura exata: 60px do item + 3px margin-bottom
+            var calculated_height = content_lines * line_height;
+            content_styles += 'height:' + calculated_height + 'px;';
+            if (enable_scrollbar) {
+                content_styles += 'overflow-y:auto;';
+            } else {
+                content_styles += 'overflow:hidden;';
+            }
+            height_info = 'Altura: ' + content_lines + ' linhas (' + calculated_height + 'px) | Scroll: ' + (enable_scrollbar ? 'Ativado' : 'Desativado');
         } else {
             content_styles += 'min-height:250px;';
             content_styles += 'max-height:' + max_height_auto + 'px;';
