@@ -15,9 +15,11 @@ ZIP_PATH = os.path.join(os.path.dirname(PLUGIN_DIR), ZIP_NAME)
 
 with zipfile.ZipFile(ZIP_PATH, "w", zipfile.ZIP_DEFLATED) as zipf:
     for root, dirs, files in os.walk(PLUGIN_DIR):
-        # Ignora a pasta dev e seus arquivos
+        # Ignora pastas desnecessárias
         if "dev" in dirs:
             dirs.remove("dev")
+        if ".git" in dirs:
+            dirs.remove(".git")
         for file in files:
             abs_path = os.path.join(root, file)
             rel_path = os.path.relpath(abs_path, PLUGIN_DIR)
